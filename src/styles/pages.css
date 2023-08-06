@@ -23,6 +23,9 @@ input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   display: none;
 }
+button:disabled{
+  background-color: #8e8e8f !important;
+}
 form, input{
   width: 100%;
 }
@@ -31,7 +34,7 @@ text-decoration: none;
 color: black;
 
 }
-a.users-render{
+li.users-render{
   width: 100%;
   padding: 10px 5px;
 }
@@ -86,7 +89,7 @@ h1 {
 button.next-button {
   padding: 14px 20px;
   font-size: 18px;
-  background-color: #1c1c1e !important;
+  background-color: #1c1c1e;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -173,7 +176,7 @@ button.next-button {
 ul.user-list li {
   display: flex;
   cursor: pointer;
-  padding: 4px;
+  padding: 4px 0;
 }
 ul.user-list li p , .chat-person p{
 font-size: 14px;
@@ -183,6 +186,9 @@ ul.user-list li img {
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 50%;
+}
+.chat-user{
+  margin-left: 0.5rem;
 }
 .chat-person {
   height: 80px;
@@ -199,17 +205,17 @@ ul.user-list li img {
   border-radius: 50%;
 }
 .chat-section {
-  /* background-color: aqua; */
   width: 100%;
   height: calc(100vh - 80px);
 }
 #chat-messages {
-  height: 90%;
+  height:70vh;
   display: flex;
   justify-content: end;
   flex-direction: column;
   width: 95%;
   margin-inline: auto;
+  overflow-y: scroll;
 }
 .chat-message li{
 list-style: none;
@@ -261,8 +267,5 @@ justify-content: flex-end;
 }
 .active{
   background-color: #0071EE;
-
-}
-a.active{
-  color: #ffffff;
+  color: white;
 }
