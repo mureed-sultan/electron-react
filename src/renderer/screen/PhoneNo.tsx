@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import signupImg from '../../../assets/signup-logo.png';
-
+import { Link } from 'react-router-dom';
 function PhoneNo() {
   const [countryCodes, setCountryCodes] = useState([]);
   const [number, setNumber] = useState(0);
@@ -80,9 +80,9 @@ function PhoneNo() {
         <button type="submit" className="next-button" onClick={handleSubmit}>
           Next
         </button>
-        <a className="link-text" href="../pages/login.html">
-          Already Account
-        </a>
+        <Link className="link-text" to={'signin'}>
+        Sign In
+      </Link>
       </div>
     </div>
   );

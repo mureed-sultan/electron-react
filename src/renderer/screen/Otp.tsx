@@ -17,9 +17,9 @@ function Otp() {
   };
   const navToFullName = (event: { preventDefault: () => void }) => {
     event.preventDefault();
-    navgate('/fullname');
+    navgate('/fullname', { state: phoneNumb });
   };
-  const isButtonDisabled = otpCode.length !== 4;
+  const isButtonDisabled = otpCode.length <= 3;
   return (
     <div className="container-new">
       <img src={signupImg} alt="Signup" />

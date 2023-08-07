@@ -68,6 +68,8 @@ let mainWindow: BrowserWindow | null = null;
 ipcMain.on('ipc-example', async (event, arg) => {
   event.reply('ipc-example', 'Hellow to the World of ABC');
 });
+ipcMain.setMaxListeners(15);
+
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -168,52 +170,39 @@ app
     });
   })
   .catch();
-
-const handleRegUser = (event, firstName, lastName, phoneNo) => {
-  let usrReg = {
-    firstName: firstName,
-    lastName: lastName,
-    phoneNumber: phoneNo,
-    emailId: firstName.toLowerCase() + '@email.com',
-  };
+ipcMain.on('reg-user', async (event, firstName, lastName, pass) => {
+  let usrReg = {};
   createUserWithEmailAndPassword(
     auth,
     firstName.toLowerCase() + '@email.com',
-    phoneNo
+    pass
   )
     .then((userCredential) => {
       console.log('User registration successful:', userCredential.user.email);
-      mainWindow.loadFile(`./pages/chat.html`);
-      userActive = userCredential.user.email.split('@')[0];
-      showUsers();
+      usrReg = {
+        firstName: firstName,
+        lastName: lastName,
+        phoneNumber: pass,
+        emailId: firstName.toLowerCase() + '@email.com',
+      };
+      addDoc(usersRef, usrReg)
+        .then((docRef) => {
+          console.log('Document written with ID:', docRef.id);
+          ipcMain.on('user-accept', async (event, arg) => {
+            event.reply('user-accept', true);
+          });
+        })
+        .catch((error) => {
+          console.error("Error adding document to 'users' collection:", error);
+        });
     })
     .catch((error) => {
       console.error('User registration error:', error.code);
     });
-  addDoc(usersRef, usrReg)
-    .then((docRef) => {
-      console.log('Document written with ID:', docRef.id);
-    })
-    .catch((error) => {
-      console.error("Error adding document to 'users' collection:", error);
-    });
-};
-
-function handleAuthUser(event, email, password) {
-  signInWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-      const user = userCredential.user;
-      console.log('userloged in ', user.email);
-      userActive = user.email.split('@')[0];
-      mainWindow.loadFile(`./pages/chat.html`);
-      showUsers();
-    })
-    .catch((error) => {
-      console.log(error.code);
-    });
-}
-let chatMessages = [];
-let userActive = 'Mureed Sultan';
+});
+let chatMessages: { id: string; date: string; sender: any; message: any }[] =
+  [];
+let userActive = 'Sultan Akbar';
 ipcMain.on('active-user', async (event) => {
   event.reply('active-user', userActive);
 });
@@ -226,10 +215,15 @@ const getChat = () => {
     'value',
     (snapshot) => {
       const messages = snapshot.val();
+      chatMessages = [];
       if (messages) {
         Object.keys(messages).forEach((messageId) => {
           const { sender, message, timestamp } = messages[messageId];
-          const date = new Date(timestamp).toLocaleString();
+          const date = new Date(timestamp).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+          });
           const isDuplicate = chatMessages.some((msg) => msg.id === messageId);
           if (!isDuplicate) {
             chatMessages.push({ id: messageId, date, sender, message });
@@ -258,16 +252,48 @@ ipcMain.on('select-user-chat', async (event, arg) => {
   getChat();
 });
 
-async function uploadChat(event, message) {
-  try {
-    const newMessageRef = dbref.push();
-    await newMessageRef.set({
-      sender: userActive,
-      message: message,
-      timestamp: Date.now(),
-    });
-    console.log('New message added to the database.');
-  } catch (error) {
-    console.error('Error adding new message to the database: ', error);
+ipcMain.on('updata-chat', async (event, arg) => {
+  async function uploadChat(event, message) {
+    try {
+      const newMessageRef = dbref.push();
+      await newMessageRef.set({
+        sender: userActive,
+        message: message,
+        timestamp: Date.now(),
+      });
+      console.log('New message added to the database.');
+    } catch (error) {
+      console.error('Error adding new message to the database: ', error);
+    }
   }
-}
+  uploadChat(event, arg);
+});
+ipcMain.on('auth-user', async (event, email, password) => {
+  console.log(email, password);
+  signInWithEmailAndPassword(auth, email, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      getDocs(usersRef)
+        .then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {
+            if (doc.data().emailId == user.email) {
+              userActive = doc.data().firstName + ' ' + doc.data().lastName;
+            }
+          });
+          ipcMain.on('user-accept', async (event, arg) => {
+            event.reply('user-accept', true);
+          });
+        })
+        .catch((error) => {
+          console.error(
+            "Error fetching documents from 'users' collection:",
+            error
+          );
+        });
+    })
+    .catch((error) => {
+      console.log(error.code);
+    });
+});
+
+// setInterval(()=>{console.log(userActive)},5000)
