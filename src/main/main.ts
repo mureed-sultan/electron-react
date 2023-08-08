@@ -235,7 +235,6 @@ const getChat = () => {
       } else {
         console.log('No messages found.');
         chatMessages = [];
-        mainWindow.webContents.send('clearChat', chatMessages);
       }
     },
     (errorObject) => {

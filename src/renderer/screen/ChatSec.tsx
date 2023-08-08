@@ -21,21 +21,7 @@ function ChatSec() {
       );
     };
   }, []);
-  useEffect(() => {
-    const fetchChatListener = (arg) => {
-      setChats(arg);
-    };
-    if (activeUser) {
-      window.electron.ipcRenderer.on('fetch-chat', fetchChatListener);
-      window.electron.ipcRenderer.sendMessage('fetch-chat');
-      return () => {
-        window.electron.ipcRenderer.removeEventListener(
-          'fetch-chat',
-          fetchChatListener
-        );
-      };
-    }
-  }, [activeUser]);
+
   useEffect(() => {
     const activeUserListener = (arg) => setGlobalUsr(arg);
     window.electron.ipcRenderer.on('active-user', activeUserListener);
@@ -47,6 +33,15 @@ function ChatSec() {
       );
     };
   }, []);
+  const fetchChatListener = (arg) => {
+    setChats(arg);
+  };
+  if (activeUser) {
+    window.electron.ipcRenderer.on('fetch-chat', fetchChatListener);
+    window.electron.ipcRenderer.sendMessage('fetch-chat');
+  }
+
+
   const handleItemClick = (user) => {
     setActiveUser(user);
     window.electron.ipcRenderer.sendMessage('select-user-chat', user);

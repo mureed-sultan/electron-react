@@ -212,13 +212,11 @@ ul.user-list li img {
   height: calc(100vh - 80px);
 }
 #chat-messages {
-  height:90%;
-  display: flex;
-  justify-content: end;
-  flex-direction: column;
+  height:83vh;
+  display: block;
   width: 95%;
   margin-inline: auto;
-  /* overflow-y: scroll; */
+  overflow-y:auto;
 }
 .pencil{
   display: flex;
