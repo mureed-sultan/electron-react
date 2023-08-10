@@ -3,15 +3,21 @@ import userImg from '../../../assets/userzzz.png';
 import sendButtonImg from '../../../assets/icons/sendimg.png';
 import pendilIcon from '../../../assets/icons/pencilicon.png';
 
-function ChatSec() {
-  const [users, setUsers] = useState([]);
-  const [activeUser, setActiveUser] = useState('');
-  const [chats, setChats] = useState([]);
-  const [globalUsr, setGlobalUsr] = useState('');
-  const [chatSend, setChatSend] = useState('');
+interface ChatMessage {
+  sender: string;
+  message: string;
+  date: string;
+}
+
+function ChatInterface() {
+  const [users, setUsers] = useState<string[]>([]);
+  const [activeUser, setActiveUser] = useState<string>('');
+  const [chats, setChats] = useState<ChatMessage[]>([]);
+  const [globalUsr, setGlobalUsr] = useState<string>('');
+  const [inputValue, setInputValue] = useState<string>('');
 
   useEffect(() => {
-    const fetchUsersListener = (arg) => setUsers(arg);
+    const fetchUsersListener = (arg: string[]) => setUsers(arg);
     window.electron.ipcRenderer.on('fetch-users', fetchUsersListener);
     window.electron.ipcRenderer.sendMessage('fetch-users');
     return () => {
@@ -23,7 +29,7 @@ function ChatSec() {
   }, []);
 
   useEffect(() => {
-    const activeUserListener = (arg) => setGlobalUsr(arg);
+    const activeUserListener = (arg: string) => setGlobalUsr(arg);
     window.electron.ipcRenderer.on('active-user', activeUserListener);
     window.electron.ipcRenderer.sendMessage('active-user');
     return () => {
@@ -33,19 +39,20 @@ function ChatSec() {
       );
     };
   }, []);
-  const fetchChatListener = (arg) => {
-    setChats(arg);
-  };
-  if (activeUser) {
-    window.electron.ipcRenderer.on('fetch-chat', fetchChatListener);
-    window.electron.ipcRenderer.sendMessage('fetch-chat');
-  }
 
-
-  const handleItemClick = (user) => {
-    setActiveUser(user);
-    window.electron.ipcRenderer.sendMessage('select-user-chat', user);
-  };
+  useEffect(() => {
+    if (activeUser) {
+      const fetchChatListener = (arg: ChatMessage[]) => setChats(arg);
+      window.electron.ipcRenderer.on('fetch-chat', fetchChatListener);
+      window.electron.ipcRenderer.sendMessage('fetch-chat');
+      return () => {
+        window.electron.ipcRenderer.removeEventListener(
+          'fetch-chat',
+          fetchChatListener
+        );
+      };
+    }
+  }, [activeUser]);
 
   const chatMessages = chats.map((message, index) => (
     <li
@@ -61,30 +68,46 @@ function ChatSec() {
     </li>
   ));
 
+  const handleUserClick = (user: string, event: React.MouseEvent) => {
+    if (event.type === 'click' || event.type === 'keydown') {
+      if (event.type === 'keydown' && event.key !== 'Enter') {
+        return;
+      }
+      setActiveUser(user);
+      window.electron.ipcRenderer.sendMessage('select-user-chat', user);
+    }
+  };
   const userList = users.map((user, index) => {
     const lastChat = chats.find((chat) => chat.sender === user);
     return (
       <li
         key={index}
         className={`users-render ${activeUser === user ? 'active' : ''}`}
-        onClick={() => handleItemClick(user)}
+        onClick={(e) => handleUserClick(user, e)}
+        onKeyDown={(e) => handleUserClick(user, e)}
+        role="button"
+        tabIndex={0}
       >
         <img src={userImg} id="chatperson-image" alt="" />
         <div className="chat-user">
           <p>{user}</p>
-          {lastChat && <span className='chat-review'>{lastChat.message}</span>}
+          {lastChat && <span className="chat-review">{lastChat.message}</span>}
         </div>
       </li>
     );
   });
+
   const mesgSend = () => {
-    window.electron.ipcRenderer.sendMessage('updata-chat', chatSend);
-    const fetchChatListener = (arg) => {
-      setChats(arg);
-    };
-    window.electron.ipcRenderer.on('fetch-chat', fetchChatListener);
-    window.electron.ipcRenderer.sendMessage('fetch-chat');
-    document.getElementById('message-input').value = '';
+    if (inputValue.trim() !== '') {
+      window.electron.ipcRenderer.sendMessage('updata-chat', inputValue);
+      setInputValue('');
+
+      const fetchChatListener = (arg: ChatMessage[]) => {
+        setChats(arg);
+      };
+      window.electron.ipcRenderer.on('fetch-chat', fetchChatListener);
+      window.electron.ipcRenderer.sendMessage('fetch-chat');
+    }
   };
 
   return (
@@ -99,7 +122,7 @@ function ChatSec() {
       </div>
       <div id="chat-window">
         <div className="chat-person">
-          <img src={userImg} id="chatperson-image" alt="No Image" />
+          <img src={userImg} id="chatperson-image" alt="No img found" />
           <p id="chatperson-name">
             {activeUser ? `${activeUser}` : 'No User Selected'}
           </p>
@@ -111,8 +134,9 @@ function ChatSec() {
           <div className="chat-input-box">
             <input
               onChange={(e) => {
-                setChatSend(e.target.value);
+                setInputValue(e.target.value);
               }}
+              value={inputValue}
               type="text"
               id="message-input"
               placeholder="Message"
@@ -126,4 +150,5 @@ function ChatSec() {
     </div>
   );
 }
-export default ChatSec;
+
+export default ChatInterface;

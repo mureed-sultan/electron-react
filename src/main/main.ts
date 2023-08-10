@@ -170,20 +170,20 @@ app
     });
   })
   .catch();
-ipcMain.on('reg-user', async (event, firstName, lastName, pass) => {
+ipcMain.on('reg-user', async (event, firstNames, lastNames, pass) => {
   let usrReg = {};
   createUserWithEmailAndPassword(
     auth,
-    firstName.toLowerCase() + '@email.com',
+    `${firstNames.toLowerCase()}@email.com`,
     pass
   )
     .then((userCredential) => {
       console.log('User registration successful:', userCredential.user.email);
       usrReg = {
-        firstName: firstName,
-        lastName: lastName,
+        firstName: firstNames,
+        lastName: lastNames,
         phoneNumber: pass,
-        emailId: firstName.toLowerCase() + '@email.com',
+        emailId: `${firstNames.toLowerCase()}@email.com`,
       };
       addDoc(usersRef, usrReg)
         .then((docRef) => {
@@ -202,7 +202,7 @@ ipcMain.on('reg-user', async (event, firstName, lastName, pass) => {
 });
 let chatMessages: { id: string; date: string; sender: any; message: any }[] =
   [];
-let userActive = 'Sultan Akbar';
+let userActive = 'Mureed Sultan';
 ipcMain.on('active-user', async (event) => {
   event.reply('active-user', userActive);
 });
@@ -238,7 +238,7 @@ const getChat = () => {
       }
     },
     (errorObject) => {
-      console.log('The read failed: ' + errorObject.name);
+      console.log(`The read failed: ${errorObject.name}`);
     }
   );
 };
@@ -246,18 +246,18 @@ const getChat = () => {
 ipcMain.on('select-user-chat', async (event, arg) => {
   const sortedEmails = [userActive, arg].sort();
   const chatKey = `${sortedEmails[0]}_${sortedEmails[1]}`;
-  dbref = admin.database().ref('chats/' + chatKey);
-  ref = admin.database().ref('chats/' + chatKey);
+  dbref = admin.database().ref(`chats/${chatKey}`);
+  ref = admin.database().ref(`chats/${chatKey}`);
   getChat();
 });
 
 ipcMain.on('updata-chat', async (event, arg) => {
-  async function uploadChat(event, message) {
+  async function uploadChat(event, messages: any) {
     try {
       const newMessageRef = dbref.push();
       await newMessageRef.set({
         sender: userActive,
-        message: message,
+        message: messages,
         timestamp: Date.now(),
       });
       console.log('New message added to the database.');
@@ -271,16 +271,16 @@ ipcMain.on('auth-user', async (event, email, password) => {
   console.log(email, password);
   signInWithEmailAndPassword(auth, email, password)
     .then((userCredential) => {
-      const user = userCredential.user;
+      const { user } = userCredential;
+      ipcMain.on('user-accept', async (event, arg) => {
+        event.reply('user-accept', true);
+      });
       getDocs(usersRef)
         .then((querySnapshot) => {
           querySnapshot.forEach((doc) => {
-            if (doc.data().emailId == user.email) {
-              userActive = doc.data().firstName + ' ' + doc.data().lastName;
+            if (doc.data().emailId === user.email) {
+              userActive = `${doc.data().firstName} ${doc.data().lastName}`;
             }
-          });
-          ipcMain.on('user-accept', async (event, arg) => {
-            event.reply('user-accept', true);
           });
         })
         .catch((error) => {
